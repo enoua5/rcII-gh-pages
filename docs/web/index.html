@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Revenge Chess</title>
+    <style id = "setable_styles">
+      :root
+      {
+        --side-bar-color: #555566;
+        --side-bar-text: #ffffee;
+        --black-square-color: #0099aa;
+        --white-square-color: #aaccff;
+        --selected-color: #880088;
+        --possible-move-color: #aaaaaa;
+        --respawn-point-color: #ff4444;
+        --prev-move-color: #cccc44;
+      }
+    </style>
+    <link href="style.css" rel="stylesheet"/>
+    <script src = "src/util.js"></script>
+    <script src = "src/board.js"></script>
+    <script src = "src/infopane.js"></script>
+    <script src = "src/ai.js"></script>
+    <script>
+      function l(what){return document.getElementById(what)}
+      
+      var Settings = {
+        orientation: "w",
+        ai: {
+          white: defaultEngineSettings(),
+          black: defaultEngineSettings()
+        },
+      };
+      
+      var prelimSettings = {};
+      
+      var Game = {
+        game: null,
+        engine: null
+      }
+      
+      var pageLoaded = false;
+      
+      var Module = {
+        onRuntimeInitialized: function() {
+          Game.game = new Module.Game();
+          Game.engine = new Module.Engine();
+          if(pageLoaded)
+          {
+            bothPageAndModuleLoaded()
+          }
+        }
+      };
+      
+      var engine;
+    
+      function bothPageAndModuleLoaded()
+      {
+        dispboard(Game.game.board);
+        fillVersionNumbers();
+      }
+    
+      function onload()
+      {
+        for(let y = 7; y >= 0; y--)
+        {
+          for(let x = 0; x < 8; x++)
+          {
+            let s = document.createElement("div");
+            s.classList.add("square");
+            s.id = "square_"+numCoordToString(x,y);
+            let color = (x+y)%2 == 1 ? "white" : "black";
+            s.classList.add(color+"_square");
+            s.onclick=(e)=>{squareClicked(e,s)}
+            
+            s.ondragstart=(e)=>{squareClicked(e,s)}
+            s.ondrop=(e)=>{squareClicked(e,s)}
+            s.ondragend=droppedOutside;
+            s.ondragenter=(e)=>{e.preventDefault()}
+            s.ondragover=(e)=>{e.preventDefault()}
+            
+            s.onmouseenter=(e)=>{squareHovered(e,s)}
+            s.onmouseleave=(e)=>{squareUnhovered(e,s)}
+            //tr.appendChild(td);
+            l("board").appendChild(s);
+          }
+        }
+        
+          
+        pageLoaded = true;
+        if(Game.game)
+        {
+          bothPageAndModuleLoaded();
+        }
+        
+        //////////////////////////////////////////////////
+        var prevFrameWindowSize = {
+          width: null,
+          height: null,
+          twoFrames: false
+        };
+        
+        setInterval(()=>{
+          // if the window has not been resized in the last two frames, do nothing.
+          if(prevFrameWindowSize.width == window.innerWidth
+            && prevFrameWindowSize.height == window.innerHeight)
+          {
+            if(prevFrameWindowSize.twoFrames)
+              return;
+            prevFrameWindowSize.twoFrames = true;
+          }
+          else
+          {
+            prevFrameWindowSize.twoFrames = false;
+          }
+          
+          prevFrameWindowSize.width = window.innerWidth;
+          prevFrameWindowSize.height = window.innerHeight;
+          
+          
+        
+          let ratio = l("container").clientWidth/l("container").clientHeight;
+          if(ratio == 0) ratio = 1.2;
+          ratio = ratio.toFixed(2);
+          
+          if(window.innerWidth > window.innerHeight*ratio)
+          {
+            l("container").style.width = (window.innerHeight*ratio*0.95)+"px";
+          }
+          else
+          {
+            l("container").style.width = (window.innerWidth*0.95)+"px";
+          }
+          // fallback for if aspectratio doesn't work
+          // breaks if done unconditionally
+          if(!("aspectRatio" in document.body.style))
+            l("board").style.height = l("board").clientWidth + "px";
+        },50);
+        
+        ///////////////////////////////////////////////////////
+      
+        setInterval(showTimes, 50);
+        
+        ///////////////////////////////////////////////////////
+        
+        let colorSelectors = document.getElementsByClassName("colorSelect");
+        for(c of colorSelectors)
+          setDefaultColor(c);
+        
+        ///////////////////////////////////////////////////////
+        
+        engine = new Worker("engine.worker.js");
+        engine.onmessage = acceptAIMove;
+        engine.onerror = engineError;
+        
+        ///////////////////////////////////////////////////////
+        
+        setInterval(()=>{
+          // if the AI is not running but is supposed to be, start it
+          let sets = getCurrentPlayerSets();
+          if(sets.usingAI && !AI_status.running)
+          {
+            console.warn("Restarting stopped AI...");
+            makeAIMove();
+          }
+          
+          // update the load bar
+          if(!AI_status.running)
+            l("ai-load-bar").style.display = "none";
+          else
+          {
+            if(l("ai-load-bar").style.display == "none")
+              l("ai-load-bar").style.display = "block";
+              
+            let timeSpentThinking = Game.game.clock.getTimeSpentThisTurn() - AI_status.time_spent_before_thining
+            let p = timeSpentThinking / AI_status.thinking_time;
+            let perc = Math.max(Math.min(Math.round(p*100), 100), 0);
+              
+            
+            l("load-slider").style.width = perc+"%";
+          }
+        }, 500);
+        
+        ////////////////////////////////////////////////////////////////////////
+        
+        showWindow('home-screen');
+      }
+      
+      function setOrientation(el)
+      {
+        selectRadio('orientation-radio', el, 'orientation');
+        dispboard(Game.game.board);
+      }
+      
+    </script>
+    
+    <script src="revengechess.js"></script>
+  </head>
+  <body onload="onload()">
+  
+    <!-- Pop-up holder -->
+    <div id="pane">
+      <div id="home-screen" class="window">
+        <h2>Revenge Chess</h2>
+        <h5>I'm not a UI designer, sorry. &#x1F605;</h5>
+        <button onclick="hideWindows(); showWindow('new-game')">Play</button>
+        <br/>
+        <button disabled>Play online</button>
+        <br/>
+        <button disabled>Play tutorials</button>
+      </div>
+      <div id="result-screen" class="window">
+        <h2 id="winner"></h2>
+        <h3 id="winner-info"></h3>
+        <button onclick="hideWindows();">show board</button>
+        <button onclick="hideWindows(); showWindow('new-game');">new game</button>
+      </div>
+      <div id="new-game" class="window">
+        <h2>New game</h2>
+        <details>
+          <summary>White settings</summary>
+          <details>
+            <summary>Time settings</summary>
+            
+            <input id="time-for-white" type="checkbox" checked onchange="updatePrelimSets(this)" data-color="white" data-appliesTo="useTime" data-enablesection="white-time-settings"></input>
+            <label for="time-for-white">Use time for player</label>
+            <br/>
+            <div id="white-time-settings">
+              <span>Main time:</span>
+              
+              <input onchange="updatePrelimSets(this)" data-color="white" data-appliesto="mainTimeMin" type="number" min="0" value="5"></input>
+              <span>:</span>
+              <input onchange="updatePrelimSets(this)" data-color="white" data-appliesto="mainTimeSec" type="number" min="0" max="59" value="0"></input>
+              <br/>
+              
+              <span>Increment amount:</span>
+              
+              <input onchange="updatePrelimSets(this)" data-color="white" data-appliesto="incrementAmount" type="number" min="0" max="60" value="15"></input>
+              
+              <span>seconds</span>
+              <br/>
+              
+              <span>IncrementMethod:</span>
+              <select onchange="updatePrelimSets(this)" data-color="white" data-appliesto="incrementMethod">
+                <option value="bronstein">Bronstein Increment</option>
+                <option value="increment">Simple Increment</option>
+                <option value="delay">Delay</option>
+              </select>
+            </div>
+            
+          </details>
+          <details>
+            <summary>AI settings</summary>
+            <input id="white-is-ai" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="usingAI" data-enablesection="white-ai-settings" type="checkbox"></input>
+            <label for="white-is-ai">Player is AI</label>
+            <div id="white-ai-settings" class="setting-disable">
+              <span>AI limit method:</span>
+              <select onchange="updatePrelimSets(this)" data-color="white" data-appliesto="limitMode">
+                <option value="auto">Automatic</option>
+                <option value="time">Constant time</option>
+                <option value="depth">Constant depth</option>
+              </select>
+              <br/>
+              <span>Max thinking time: </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="maxTime" min="0" value="60"></input>
+              <span>seconds</span>
+              <br/>
+              <span>Default thinking time (if constant): </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="limitSeconds" min="0" value="15"></input>
+              <span>seconds</span>
+              <br/>
+              <span>Plys to search (if constant): </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="limitPlys" min="0" value="6"></input>
+              <br/>
+              <span>Leave a buffer of</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="flagBuffer" min="0" value="500"></input>
+              <span>milliseconds on the clock</span>
+              <br/>
+              <span>Try to play moves that are</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="minDelta" min="0" value="0"></input>
+              <span>-</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="white" data-appliesto="maxDelta" min="0" value="10"></input>
+              <span>centipawns worse than the best move</span>
+            </div>
+            
+          </details>
+        </details>
+        
+        <hr/>
+        
+        <details>
+          <summary>Black settings</summary>
+          <details>
+            <summary>Time settings</summary>
+            
+            <input id="black-same-time" type="checkbox" checked onchange="updatePrelimSets(this)" data-color="black" data-appliesTo="useSameTime" data-disablesection="black-time-settings-all"></input>
+            <label for="black-same-time">Use same time settings as White</label>
+            
+            <div id="black-time-settings-all" class="setting-disable">
+              <input id="time-for-black" type="checkbox" checked onchange="updatePrelimSets(this)" data-color="black" data-appliesTo="useTime" data-enablesection="black-time-settings"></input>
+              <label for="time-for-black">Use time for player</label>
+              <br/>
+              <div id="black-time-settings">
+                <span>Main time:</span>
+                
+                <input onchange="updatePrelimSets(this)" data-color="black" data-appliesto="mainTimeMin" type="number" min="0" value="5"></input>
+                <span>:</span>
+                <input onchange="updatePrelimSets(this)" data-color="black" data-appliesto="mainTimeSec" type="number" min="0" max="59" value="0"></input>
+                <br/>
+                
+                <span>Increment amount:</span>
+                
+                <input onchange="updatePrelimSets(this)" data-color="black" data-appliesto="incrementAmount" type="number" min="0" max="60" value="15"></input>
+                
+                <span>seconds</span>
+                <br/>
+                
+                <span>IncrementMethod:</span>
+                <select onchange="updatePrelimSets(this)" data-color="black" data-appliesto="incrementMethod">
+                  <option value="bronstein">Bronstein Increment</option>
+                  <option value="increment">Simple Increment</option>
+                  <option value="delay">Delay</option>
+                </select>
+              </div>
+            </div>
+          </details>
+          <details>
+            <summary>AI settings</summary>
+            <input id="black-is-ai" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="usingAI" data-enablesection="black-ai-settings" type="checkbox"></input>
+            <label for="black-is-ai">Player is AI</label>
+            <div id="black-ai-settings" class="setting-disable">
+              <span>AI limit method:</span>
+              <select onchange="updatePrelimSets(this)" data-color="black" data-appliesto="limitMode">
+                <option value="auto">Automatic</option>
+                <option value="time">Constant time</option>
+                <option value="depth">Constant depth</option>
+              </select>
+              <br/>
+              <span>Max thinking time: </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="maxTime" min="0" value="60"></input>
+              <span>seconds</span>
+              <br/>
+              <span>Default thinking time (if constant): </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="limitSeconds" min="0" value="15"></input>
+              <span>seconds</span>
+              <br/>
+              <span>Plys to search (if constant): </span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="limitPlys" min="0" value="6"></input>
+              <br/>
+              <span>Leave a buffer of</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="flagBuffer" min="0" value="500"></input>
+              <span>milliseconds on the clock</span>
+              <br/>
+              <span>Try to play moves that are</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="minDelta" min="0" value="0"></input>
+              <span>-</span>
+              <input type="number" onchange="updatePrelimSets(this)" data-color="black" data-appliesto="maxDelta" min="0" value="10"></input>
+              <span>centipawns worse than the best move</span>
+            </div>
+          </details>
+        </details>
+        
+        <button onclick="hideWindows();">close</button>
+        <button onclick = "newGame(); hideWindows()">create new game</button>
+      </div>
+      <div id="about-page" class="window">
+        <h2>About</h2>
+        <hr/>
+        <h3>User Interface</h3>
+        <h4>Main code</h4>
+        <p>Revenge Chess UI, version b2.0.0</p>
+        <p>&copy; Jacob Allen, 2021. <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. <a href="https://github.com/enoua5/revengechessII">Github</a>.</p>
+        <h4>Piece images</h4>
+        <p>&copy; <a href="https://pixabay.com/users/clker-free-vector-images-3736/">Clker-Free-Vector-Images</a>. <a href="https://pixabay.com/service/license/">Pixabay Licence</a>. <a href="https://pixabay.com/vectors/chess-pieces-set-symbols-game-26774/">Source</a>.</p>
+        <hr/>
+        
+        <h3>Game Core</h3>
+        <h4>Main code</h4>
+        <p id="core-version"></p>
+        <p>&copy; Jacob Allen, 2021. <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. <a href="https://github.com/enoua5/revengechessII">Github</a>.</p>
+        <h4>C++ JSON</h4>
+        <p>nlohmann::json, version 3.9.1</p>
+        <p>&copy; <a href="http://nlohmann.me">Niels Lohmann</a>, 2013 - 2019. <a href="http://opensource.org/licenses/MIT">MIT License</a>. <a href="https://github.com/nlohmann/json">Source</a>.</p>
+        <hr/>
+        
+        <h3>Engine</h3>
+        <h4>Main code</h4>
+        <p id="engine-version"></p>
+        <p>&copy; Jacob Allen, 2021. <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. <a href="https://github.com/enoua5/revengechessII">Github</a>.</p>
+        <hr/>
+        
+        <button onclick="hideWindows();">close</button>
+      </div>
+      <div id="color-settings" class="window">
+        <h2>Color Settings</h2>
+        <!-- Uses previousElementSibling, so be careful about adding new elements -->
+        <label>Black Square Color</label>
+        <input class="colorSelect" data-appliesTo="black-square-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>White Square Color</label>
+        <input class="colorSelect" data-appliesTo="white-square-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Selected Square Color</label>
+        <input class="colorSelect" data-appliesTo="selected-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Possible Move Color</label>
+        <input class="colorSelect" data-appliesTo="possible-move-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Respawn Point Color</label>
+        <input class="colorSelect" data-appliesTo="respawn-point-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Previous Move Color</label>
+        <input class="colorSelect" data-appliesTo="prev-move-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Side Bar Color</label>
+        <input class="colorSelect" data-appliesTo="side-bar-color" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        
+        <label>Side Bar Text</label>
+        <input class="colorSelect" data-appliesTo="side-bar-text" type="color" onchange="setThemeColor(this)"></input>
+        <button onclick="resetColor(this.previousElementSibling)">Reset</button>
+        <br/>
+        <div class="sidebar-example">
+          <p>Example. Make sure this is readable.</p>
+        </div>
+        <div>
+          <div class="example-square black_square"></div>
+          <div class="example-square white_square"></div>
+          <div class="example-square black_square"></div>
+          <div class="example-square white_square"></div>
+          <br/>
+          <div class="example-square white_square">
+            <image src="img/pieces/bp.svg"></image>
+          </div>
+          <div class="example-square black_square">
+            <image src="img/pieces/bp.svg"></image>
+          </div>
+          <div class="example-square white_square">
+            <image src="img/pieces/wp.svg"></image>
+          </div>
+          <div class="example-square black_square">
+            <image src="img/pieces/wp.svg"></image>
+          </div>
+          <br/>
+          <div class="example-square black_square possible_move"></div>
+          <div class="example-square white_square respawn_point"></div>
+          <div class="example-square black_square prev_move"></div>
+          <div class="example-square white_square selected"></div>
+          <br/>
+          <div class="example-square white_square prev_move possible_move"></div>
+          <div class="example-square black_square prev_move respawn_point"></div>
+          <div class="example-square white_square selected possible_move"></div>
+          <div class="example-square black_square selected respawn_point"></div>
+        </div>
+        
+        <br/>
+        <button disabled>Save color scheme (coming soon)</button>
+        <button onclick="hideWindows();">close</button>
+      </div>
+    </div>
+    
+    <!-- Game container -->
+    <div id="container" style="text-align: center; display: inline-block">
+      <div id = "gamearea">
+        <div id="option-bar">
+          <div class="dropdown header-button">
+            <p>Game</p>
+            <ul>
+              <li onclick="showWindow('new-game')">New game..</li>
+              <li class = 'button-disable'>Connect to server..</li>
+              <li class = 'button-disable'>Tutorial scenarios</li>
+            </ul>
+          </div>
+          <div class="dropdown header-button">
+            <p>Appearance</p>
+            <ul>
+              <li onclick="showWindow('color-settings')">Colors..</li>
+              <li>
+                <div class="dropdown inner-menu-button">
+                  <p>Board orientation &gt;</p>
+                  <ul>
+                    <li data-value="w" class="orientation-radio radio-selected" onclick="setOrientation(this)">White at bottom</li>
+                    <li data-value="b" class="orientation-radio" onclick="setOrientation(this)">Black at bottom</li>
+                    <li data-value="t" class="orientation-radio" onclick="setOrientation(this)">Current turn at bottom</li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="dropdown header-button">
+            <p onclick ="showWindow('about-page')">About..</p>
+          </div>
+        </div>
+        <div id="board"></div>
+        <div id="game-info">
+          <div id="clocks">
+            <div id="white_clock"></div>
+            <div id="black_clock"></div>
+          </div>
+          <div id="piece-stats">
+            <div>
+              <img id="piece-img" class="info-piece-img"></img>
+              <h1 id="piece-name" class="info-piece-name"></h1>
+            </div>
+            <ul id="capture-list">
+            
+            </ul>
+          </div>
+          
+          <div id="ai-stats">
+            <div id="ai-error" class="tooltip-holder" style="display: none">
+              <img src="img/error.png" onclick="l('ai-error').style.display = 'none'"></img>
+              <span id="ai-error-msg" class="tooltip"></span>
+            </div>
+            <div id="ai-load-bar"><div id="load-slider"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

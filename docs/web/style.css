@@ -1,0 +1,417 @@
+/*
+ * Mega list of all css rules.
+ * Organization is tenuous at best.
+ * Sorry. 
+ */
+
+body
+{
+  margin: /*10px*/0;
+  text-align: center;
+  background: black;
+  user-select: none;
+  font-weight: 900;
+}
+#gamearea
+{
+  width: 100%;
+  display: inline-grid;
+  grid-template-rows: [header] 1.5em [mainarea] auto;
+  grid-template-columns: [board] auto [info] 25%; 
+}
+#option-bar
+{
+  grid-column: board / span 2;
+  grid-row-start: header;
+}
+#board
+{
+  grid-column-start: board;
+  grid-row-start: mainarea;
+  aspect-ratio: 1/1;
+  
+  display: inline-grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+}
+#game-info
+{
+  background-color: var(--side-bar-color);
+  color: var(--side-bar-text);
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  grid-column-start: info;
+  grid-row-start: mainarea;
+  position: relative;
+}
+.square
+{
+  margin: 0px;
+  /*display: inline-block;*/
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+.square>img
+{
+  width: 80%;
+  height: 80%;
+}
+.square:hover>img
+{
+  z-index: 2;
+}
+
+.possible_move:empty::after, .respawn_point::after
+{
+  content: "";
+  display: block;
+  border-radius: 100%;
+  width: 50%;
+  height: 50%;
+  position: relative;
+}
+.square.possible_move:empty::after, .square.respawn_point::after
+{
+  position: absolute;
+}
+.possible_move:not(:empty)::after, .respawn_point:not(:empty)::after
+{
+  content:"";
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  border-radius: 100%;
+}
+
+.promotion_selector
+{
+  width: 80%;
+  height: 80%;
+  background: white;
+  position: absolute;
+  z-index: 2;
+}
+.promotion_selector>div
+{
+  background: white;
+  width: 300%;
+  height: 200%;
+  position: absolute;
+  z-index: 2;
+  
+  left: -100%; /* JS switches this to 0% for promotion at the left-most column, and -200% for right-most */
+  top: 100%; /* JS switches this to -200% for promotion at the bottom of the screen */
+}
+.promotion_selector>div>img
+{
+  width: 30%;
+}
+
+.black_square
+{
+  background-color: var(--black-square-color);
+}
+.white_square
+{
+  background-color: var(--white-square-color);
+}
+.selected
+{
+  background-color: var(--selected-color);
+}
+.prev_move
+{
+  background: var(--prev-move-color);
+}
+.possible_move:not(.respawn_point):empty::after
+{
+  background: var(--possible-move-color);
+}
+.possible_move:not(.respawn_point):not(:empty)::after
+{
+  background: radial-gradient(transparent 50%, var(--possible-move-color) 50%);
+}
+.respawn_point::after
+{
+  background: var(--respawn-point-color);
+}
+.respawn_point:not(:empty)::after
+{
+  background: radial-gradient(transparent 50%, var(--respawn-point-color) 50%);
+}
+
+.info-piece-name
+{
+  display: inline;
+}
+
+.info-piece-img
+{
+  width: 10%;
+  margin-right: 5px;
+}
+
+#capture-list
+{
+  list-style-type: none;
+  padding-left: 15%;
+  text-align: left;
+  margin: 0;
+}
+
+#capture-list>li
+{
+  margin: 0;
+}
+
+#capture-list>.info-piece-img
+{
+  width: auto;
+  height: 5vh;
+}
+
+#capture-list>.info-piece-name
+{
+  font-size: 5vh;
+}
+
+#white_clock:not(.active_clock)
+{
+  background-color: #aaa;
+  color: #000;
+}
+#white_clock.active_clock
+{
+  background-color: #fff;
+  color: #000;
+}
+#black_clock:not(.active_clock)
+{
+  background-color: #666;
+  color: #fff;
+}
+#black_clock.active_clock
+{
+  background-color: #000;
+  color: #fff;
+}
+.timer-milliseconds
+{
+  font-size: 0.5em;
+}
+
+#option-bar
+{
+  background: var(--side-bar-color);
+}
+.header-button
+{
+  float: left;
+  background: dimgrey;
+  color: white;
+  margin: 0.1em;
+  padding: 0.1em 0.25em 0.1em 0.25em;
+  display: inline-block;
+  overflow-x: visible;
+}
+
+.header-button > :first-child
+{
+  font-size: 0.75em;
+}
+.dropdown > :first-child
+{
+  margin: initial;
+}
+.dropdown > :not(:first-child)
+{
+  font-size: 0.8em;
+  text-align: left;
+}
+.dropdown:not(:hover) > ul
+{
+  display: none;
+}
+.dropdown > ul
+{
+  list-style-type: none;
+  padding: initial;
+  margin: initial;
+  position: absolute;
+  margin-top: 0.1em;
+  z-index: 3;
+}
+.inner-menu-button > ul
+{
+  left: 100%;
+  top: 1.5em;
+}
+
+.dropdown > ul > li, .inner-menu-button
+{
+  border: 1px solid black;
+  border-top: 0;
+  background: dimgrey;
+}
+.inner-menu-button > ul > li
+{
+  width: 300%;
+}
+.dropdown > ul > li:hover:not(.button-disable)
+{
+  background: black;
+}
+.button-disable
+{
+  color: grey;
+}
+
+.radio-selected::before
+{
+  content: "*"
+}
+
+#pane
+{
+  z-index: 5;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: #0008;
+  display: none;
+}
+.window
+{
+  background: darkgrey;
+  color: white;
+  padding: 1em;
+  border: 3px solid white;
+  height: 80vh;
+  top: 5vh;
+  overflow-y: scroll;
+  position: relative;
+  display: none;
+}
+
+.sidebar-example
+{
+  background: var(--side-bar-color);
+  color: var(--side-bar-text);
+}
+
+.example-square
+{
+  width: 2em;
+  height: 2em;
+  display: inline-block;
+  /* ??? wtf ??? */
+  margin: -0.2em;
+}
+.example-square > img
+{
+  width: 80%;
+  height: 80%;
+  margin-top: 10%;
+}
+.example-square::after
+{
+  margin: 25%;
+}
+
+#about-page p
+{
+  font-size: 0.8em;
+}
+
+#ai-load-bar
+{
+  border: 1px solid white;
+  height: 1em;
+  padding: 0;
+}
+
+#ai-stats
+{
+  /* margin = (100 - width) / 2 */
+  margin: 10%;
+  width: 80%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
+}
+
+#load-slider
+{
+  margin: 0;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: green;
+}
+
+#ai-error img
+{
+  float: left;
+  width: 1em;
+  height: 1em;
+}
+
+.tooltip
+{
+  display: none;
+  background: #111;
+  border: 1px solid white;
+  border-radius: 10%;
+  position: absolute;
+  left: -50%;
+  bottom: 0.1em;
+  font-size: 0.7em;
+}
+
+.tooltip-holder
+{
+  position: relative;
+}
+
+.tooltip-holder:hover .tooltip
+{
+  display: block;
+}
+
+.delay-left-indicator
+{
+  font-size: 0.75em;
+}
+
+.window :is(h1,h2,h3,h4,h5,h6)
+{
+  text-decoration: underline;
+}
+
+#new-game details
+{
+  margin: 1em;
+  text-align: left;
+}
+
+#new-game input[type=number]
+{
+  width: 3em;
+}
+
+#new-game
+{
+  width: 40em;
+}
+
+.setting-disable
+{
+  display: none;
+}
