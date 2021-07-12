@@ -23,7 +23,6 @@ onmessage = function(e) {
     
   let board = new Module.Board(e.data.board)
   let ranks = engine.rankMoves(board, e.data.time/1000, e.data.depth);
-  board.delete();
   
   let ranksArr = [];
   for(let i = 0; i < ranks.size(); i++)
@@ -58,6 +57,7 @@ onmessage = function(e) {
   
   
   postMessage({ranks: ranksArr, turn: board.turn == Module.PlayerColor.WHITE });
+  board.delete();
 }
 
 importScripts("revengechess.js")
