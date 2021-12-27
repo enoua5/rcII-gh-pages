@@ -38,7 +38,7 @@
       var client_version = {
         name: "Revenge Chess UI, standard compliant",
         major: 2,
-        minor: 4,
+        minor: 5,
         patch: 0
       };
       
@@ -243,6 +243,9 @@
           <button onclick="hideWindows();">show board</button>
           <button onclick="requestRematch();" id="rematch-button">Request rematch</button>
           <button onclick="giveUpWaitingForOpponent()">Back to explorer</button>
+          <p id="aftergame-info">
+
+          </p>
         </div>
       </div>
       
@@ -655,7 +658,7 @@
           <div id="piece-stats">
             <div>
               <img id="piece-img" class="info-piece-img"></img>
-              <h1 id="piece-name" class="info-piece-name"></h1>
+              <h4 id="piece-name" class="info-piece-name"></h4>
             </div>
             <ul id="capture-list">
             
@@ -669,6 +672,7 @@
             </div>
             <div id="ai-load-bar"><div id="load-slider"></div></div>
           </div>
+          <button onclick="showWindow('result-screen');" id="show_results_button" style="display: none;">Show results</button>
           <button onclick="resign()" id="resign_button" style="display: none;">Resign</button>
         </div>
       </div>

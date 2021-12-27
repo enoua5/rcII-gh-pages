@@ -19,14 +19,14 @@ function connectToServer(fromURLParam = false)
   }
   else
     ip = l("server-ip").value;
-  Server.url_base = ip.split(/[\/\?\#]/)[0];
+  Server.url_base = ip.split(/wss?\:\/\/[\/\?\#]/)[0];
   try
   {
     Server.server.close();
   } catch(e){}
   try
   {
-    Server.server = new WebSocket("ws://"+ip);
+    Server.server = new WebSocket(ip);
     if(fromURLParam)
     {
       // zero ms timeout so that this is deferred long enough for the window
@@ -76,8 +76,8 @@ function onServerOpen(e)
 
 var minimum_server_version = {
   name: "standard compliant",
-  major: 0,
-  minor: 1,
+  major: 1,
+  minor: 0,
   patch: 0
 };
 
@@ -351,6 +351,7 @@ function onServerMessage(e)
     {
       Server.in_online_game = true;
       l("resign_button").style.display = "";
+      l("show_results_button").style.display = "none";
       l("offline-aftergame").style.display = "none";
       l("online-aftergame").style.display = "";
       l("rematch-button").innerText = "Request rematch";
@@ -362,20 +363,24 @@ function onServerMessage(e)
 
       Server.requested_close = false;
 
+      l("aftergame-info").innerText = "";
+
       // TODO proably a lot more tbh
     }
     else if(res == "game_closed")
     {
       Server.in_online_game = false;
-      l("resign_button").style.display = "none";
-      l("offline-aftergame").style.display = "";
-      l("online-aftergame").style.display = "none";
+      //l("resign_button").style.display = "none";
+      //l("offline-aftergame").style.display = "";
+      //l("online-aftergame").style.display = "none";
 
       Server.play_as = 'x';
 
       if(!Server.requested_close)
       {
-        alert("Opponent disconnected.");
+        l("aftergame-info").innerText = "Opponent disconnected";
+        l("aftergame-info").classList.remove("rematch");
+        l("aftergame-info").classList.add("disconnect");
 
         Game.game.clock.delete();
         Game.game.clock = new Module.Clock(1000, 0, Module.IncrementMethod.NO_CLOCK);
@@ -429,12 +434,28 @@ function onServerMessage(e)
       l("winner").innerText = "Opponent resigned";
       l("winner-info").innerText = "";
       showWindow("result-screen");
+      l("show_results_button").style.display = "";
+      l("resign_button").style.display = "none";
+
     }
     else if(res == "you_resigned")
     {
       l("winner").innerText = "You resigned";
       l("winner-info").innerText = "";
       showWindow("result-screen");
+      l("show_results_button").style.display = "";
+      l("resign_button").style.display = "none";
+    }
+    else if(res == "rematch_reqd")
+    {
+      if(!you_requested_the_rematch)
+      {
+        l("aftergame-info").innerText = "Opponent requested rematch";
+        l("aftergame-info").classList.add("rematch");
+        l("aftergame-info").classList.remove("disconnect");
+        l("rematch-button").innerText = "Start rematch";
+      }
+      
     }
   }
   catch(error)
@@ -562,8 +583,10 @@ function resign()
   }
 }
 
+var you_requested_the_rematch = false;
 function requestRematch()
 {
+  you_requested_the_rematch = true;
   l("rematch-button").innerText = "Waiting for opponent...";
   Server.server.send(JSON.stringify({
     req: "request_rematch"
