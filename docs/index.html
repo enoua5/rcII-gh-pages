@@ -26,7 +26,7 @@
       function l(what){return document.getElementById(what)}
       
       var Settings = {
-        orientation: "w",
+        orientation: "p",
         ai: {
           white: defaultEngineSettings(),
           black: defaultEngineSettings()
@@ -34,11 +34,20 @@
       };
       
       var prelimSettings = {};
+
+      var persistentSettings = {};
+      try
+      {
+        persistentSettings = JSON.parse(localStorage.e5_rcii_persistent_settings);
+      }
+      catch(e){}
+
+      var changedColors = persistentSettings.theme || {};
       
       var client_version = {
         name: "Revenge Chess UI, standard compliant",
         major: 2,
-        minor: 4,
+        minor: 6,
         patch: 0
       };
       
@@ -159,6 +168,11 @@
         let colorSelectors = document.getElementsByClassName("colorSelect");
         for(c of colorSelectors)
           setDefaultColor(c);
+
+        for(let i in changedColors)
+        {
+          setThemeColorByValue(i, changedColors[i]);
+        }
         
         ///////////////////////////////////////////////////////
         
@@ -243,6 +257,9 @@
           <button onclick="hideWindows();">show board</button>
           <button onclick="requestRematch();" id="rematch-button">Request rematch</button>
           <button onclick="giveUpWaitingForOpponent()">Back to explorer</button>
+          <p id="aftergame-info">
+
+          </p>
         </div>
       </div>
       
@@ -289,6 +306,15 @@
         <button onclick="hideWindows();">close</button>
       </div>
       
+      <!------------------------ Save board screen ------------------------>
+      <div id="save-board-screen" class="window">
+        <h2>Save board</h2>
+        <p>Copy this code, you can use it in when creating a game to set up the board</p>
+        <textarea id="save-board-box"></textarea>
+        <br/>
+        <button onclick="hideWindows();">close</button>
+      </div>
+
       <!------------------------- New game screen ------------------------->
       <div id="new-game" class="window">
         <h2>New game</h2>
@@ -433,6 +459,14 @@
               <span>centipawns worse than the best move</span>
             </div>
           </details>
+        </details>
+        <hr/>
+        <details>
+          <summary>Board settings</summary>
+          <input type="checkbox" id="use-board-code" onclick="l('load-board-code').disabled=!this.checked">
+          <label for="use-board-code">Use board code</label>
+          <br/>
+          <textarea id="load-board-code" disabled></textarea>
         </details>
         
         <button onclick="hideWindows();">close</button>
@@ -601,7 +635,7 @@
         </div>
         
         <br/>
-        <button disabled>Save color scheme (coming soon)</button>
+        <button onclick="persistentSettings.theme=changedColors; localStorage.e5_rcii_persistent_settings=JSON.stringify(persistentSettings); alert('theme saved')">Save color scheme</button>
         <button onclick="hideWindows();">close</button>
       </div>
     </div>
@@ -624,6 +658,7 @@
                 </div>
               </li>
               <li class = 'button-disable'>Tutorial scenarios</li>
+              <li onclick="showSaveCode(); showWindow('save-board-screen')">Save board..</li>
             </ul>
           </div>
           <div class="dropdown header-button">
@@ -634,7 +669,8 @@
                 <div class="dropdown inner-menu-button">
                   <p>Board orientation &gt;</p>
                   <ul>
-                    <li data-value="w" class="orientation-radio radio-selected" onclick="setOrientation(this)" style="width:300%">White at bottom</li>
+                    <li data-value="p" class="orientation-radio radio-selected" onclick="setOrientation(this)" style="width:300%">Local player at bottom</li>
+                    <li data-value="w" class="orientation-radio" onclick="setOrientation(this)" style="width:300%">White at bottom</li>
                     <li data-value="b" class="orientation-radio" onclick="setOrientation(this)" style="width:300%">Black at bottom</li>
                     <li data-value="t" class="orientation-radio" onclick="setOrientation(this)" style="width:300%">Current turn at bottom</li>
                   </ul>
@@ -655,7 +691,7 @@
           <div id="piece-stats">
             <div>
               <img id="piece-img" class="info-piece-img"></img>
-              <h1 id="piece-name" class="info-piece-name"></h1>
+              <h4 id="piece-name" class="info-piece-name"></h4>
             </div>
             <ul id="capture-list">
             
@@ -669,6 +705,7 @@
             </div>
             <div id="ai-load-bar"><div id="load-slider"></div></div>
           </div>
+          <button onclick="showWindow('result-screen');" id="show_results_button" style="display: none;">Show results</button>
           <button onclick="resign()" id="resign_button" style="display: none;">Resign</button>
         </div>
       </div>

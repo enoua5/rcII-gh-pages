@@ -64,6 +64,7 @@ function showResultScreen()
     l("winner-info").innerText = "";
     
   showWindow("result-screen");
+  l("show_results_button").style.display = "";
   
   board.delete();
   clock.delete();
@@ -625,8 +626,15 @@ function newGame()
     }));
     Server.requested_close = true;
   }
+  else
+  {
+    l("resign_button").style.display = "none";
+    l("offline-aftergame").style.display = "";
+    l("online-aftergame").style.display = "none";
+  }
 
   alreadyShowedResultScreen = false;
+  l("show_results_button").style.display = "none";
   
   if(!prelimSettings.white)
     prelimSettings.white = {};
@@ -723,6 +731,20 @@ function newGame()
   Game.game.startClock(Module.PlayerColor.WHITE);
   selectedSquares.prev_move = {};
   
+  if(l('use-board-code').checked)
+  {
+    try
+    {
+      Game.game.board.delete();
+      Game.game.board = new Module.Board(l('load-board-code').value);
+    }
+    catch(e)
+    {
+      alert("invalid game code, using default instead!");
+      Game.game.board = new Module.Board();
+    }
+  }
+
   let board = Game.game.board;
   dispboard(Game.game.board);
   board.delete();
