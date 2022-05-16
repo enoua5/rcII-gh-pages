@@ -6,6 +6,7 @@
       :root
       {
         --side-bar-color: #555566;
+        --popup-color: #1c1c20;
         --side-bar-text: #ffffee;
         --black-square-color: #0099aa;
         --white-square-color: #aaccff;
@@ -233,15 +234,44 @@
   
     <!--------------------------- Pop-up holder --------------------------->
     <div id="pane">
-      <!--------------------------- Home screen --------------------------->
+      <!-------------------------- Home screen ---------------------------->
       <div id="home-screen" class="window">
         <h2>Revenge Chess</h2>
         <h5>I'm not a UI designer, sorry. &#x1F605;</h5>
-        <button onclick="hideWindows(); showWindow('new-game')">Play</button>
-        <br/>
-        <button onclick="hideWindows(); showWindow('manage-connection')">Play online</button>
-        <br/>
-        <button disabled>Play tutorials</button>
+        <button onclick="switchWindow('new-game')">Play</button>
+        <br/><br/>
+        <button onclick="switchWindow('manage-connection')">Play online</button>
+        <br/><br/>
+        <button onclick="switchWindow('tutorial-select-screen')">Play tutorials</button>
+      </div>
+
+      <!---------------------- Tutorial select screen --------------------->
+      <div id="tutorial-select-screen" class="window">
+        <h2>Tutorials</h2>
+        <ol start="0" id="tutorial-list">
+          <li><a onclick="switchWindow('how-to-play')">How to play &mdash; basics</a></li>
+        </ol>
+        <br/><br/>
+        <button onclick="switchWindow('home-screen')">Back to home screen</button>
+      </div>
+      
+      <!---------------------- Tutorial select screen --------------------->
+      <div id="how-to-play" class="window">
+        <h2>How to play</h2>
+        <h3>What this game even is</h3>
+        <p>This a a varient of chess which adds a "revenge" mechanic. With this, there are opportunities to respawn pieces, drastically changing the strategy.</p>
+        <p>The interactive tutorials will go over the basics and strategies, but here there is a compact list of new rules.</p>
+        <h3>Rules</h3>
+        <ul>
+          <li>Most rules of from Chess are used here. This tutorial assumes you're already familiar with them.</li>
+          <li>Whenever a piece is captured, all pieces that the captured piece had captured respawn.</li>
+          <li>Respawned pieces are returned to their starting squares, capturing anything in the way, even if it's a friendly piece.</li>
+          <li>Since there are situations where a king could respawn after capture, these is no check.</li>
+          <li>Since there is no check, the king can move into threatened squares, castle through check, and pawns can promote to kings.</li>
+          <li>The game is won by leaving the opponent without a king (both players without kings is a draw).</li>
+        </ul>
+        <br/><br/>
+        <button onclick="switchWindow('tutorial-select-screen')">Back to tutorials</button>
       </div>
       
       <!-------------------------- Result screen -------------------------->
@@ -250,7 +280,7 @@
         <h3 id="winner-info"></h3>
         <div id="offline-aftergame">
           <button onclick="hideWindows();">show board</button>
-          <button onclick="hideWindows(); showWindow('new-game');">New game</button>
+          <button onclick="switchWindow('new-game');">New game</button>
           <button onclick="giveUpWaitingForOpponent()" id="offline-go-online" disabled>New online game</button>
         </div>
         <div id="online-aftergame" style="display: none;">
@@ -288,7 +318,7 @@
       <!----------------------- Game explorer screen ---------------------->
       <div id="game-explorer" class="window">
         <h2>Join Game</h2>
-        <button id="new-online-game" onclick="hideWindows(); showWindow('new-online-game-screen')">+ Create new game</button>
+        <button id="new-online-game" onclick="switchWindow('new-online-game-screen')">+ Create new game</button>
         <br/>
         <br/>
         <input id="ge-game-code" class="enter-to-submit" data-submitid="join-by-id"/><button onclick="joinOnlineFromID()" id="join-by-id">Join by ID</button>
@@ -300,7 +330,7 @@
         </div>
         <br/>
         <br/>
-        <button onclick="hideWindows(); showWindow('manage-connection')">Back to connection management</button>
+        <button onclick="switchWindow('manage-connection')">Back to connection management</button>
         <br/>
         <br/>
         <button onclick="hideWindows();">close</button>
@@ -476,7 +506,7 @@
       <!---------------------- New online game screen --------------------->
       <div id="new-online-game-screen" class="window">
         <h2>Create online game</h2>
-        <button onclick="hideWindows(); showWindow('game-explorer')">Back</button>
+        <button onclick="switchWindow('game-explorer')">Back</button>
         <hr/>
         <input id="time-for-online" type="checkbox" checked onchange="updatePrelimSets(this)" data-color="online" data-appliesTo="useTime" data-enablesection="online-time-settings"></input>
         <label for="time-for-online">Use a clock</label>
@@ -657,7 +687,7 @@
                   </ul>
                 </div>
               </li>
-              <li class = 'button-disable'>Tutorial scenarios</li>
+              <li onclick = "showWindow('tutorial-select-screen')">Tutorial scenarios</li>
               <li onclick="showSaveCode(); showWindow('save-board-screen')">Save board..</li>
             </ul>
           </div>

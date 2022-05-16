@@ -103,6 +103,12 @@ function shouldWhiteBeOnTop()
   }
 }
 
+function switchWindow(id)
+{
+  hideWindows();
+  showWindow(id);
+}
+
 function showWindow(id)
 {
   l("pane").style.display = "block";
