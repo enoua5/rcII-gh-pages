@@ -505,9 +505,13 @@ body
 {
   color: rgb(95, 255, 175);
   text-decoration: underline;
-
+  text-align: left;
 }
 #tutorial-list a
 {
   cursor: pointer;
+}
+#tutorial-list li
+{
+  margin-bottom: 0.5em;
 }
