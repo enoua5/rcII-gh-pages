@@ -221,6 +221,10 @@ body
   padding: 0.1em 0.25em 0.1em 0.25em;
   overflow-x: visible;
 }
+.header-button:hover
+{
+  background-color: black;
+}
 
 .header-button > :first-child
 {
@@ -245,22 +249,32 @@ body
   padding: initial;
   margin: initial;
   position: absolute;
-  margin-left: -0.1em;
+  margin-left: -0.4em;
   z-index: 3;
+}
+
+.inner-menu-button
+{
+  position: relative;
 }
 .inner-menu-button > ul
 {
   left: 100%;
-  top: 1.5em;
+  top: 0;
 }
 
-.dropdown > ul > li, .inner-menu-button
+.dropdown > ul > li:not(:has(.inner-menu-button)), .inner-menu-button
 {
   border: 1px solid black;
   border-top: 0;
   background: dimgrey;
+  padding: 0.5em;
 }
-.dropdown > ul > li:hover:not(.button-disable)
+.inner-menu-button:hover:not(.button-disable)
+{
+  background: none;
+}
+.dropdown > ul  li:hover:not(.button-disable)
 {
   background: black;
 }
@@ -285,16 +299,49 @@ body
   background: #0008;
   display: none;
 }
-.window
+#window-holder
 {
+  padding: 1em;
+  padding-top: 0.5em;
   background: var(--popup-color);
   color: white;
-  padding: 1em;
   border: 3px solid white;
   height: 80vh;
   top: 5vh;
-  overflow-y: scroll;
   position: relative;
+  width: fit-content;
+  display: inline-block;
+  overflow-y: hidden;
+}
+#window-holder>header
+{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  
+}
+
+#window-holder .close-button, .home-button
+{
+  height: 1.1em;
+}
+
+.close-button
+{
+  align-self: flex-end;
+}
+
+.window
+{
+  display: none;
+  overflow-y: scroll;
+  height: 95%;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+}
+.window::-webkit-scrollbar
+{
   display: none;
 }
 
@@ -409,6 +456,10 @@ body
 .window :is(h1,h2,h3,h4,h5,h6)
 {
   text-decoration: underline;
+}
+.window :is(h1,h2,h3,h4,h5,h6):first-child
+{
+  margin-top: 0;
 }
 
 #new-game details
